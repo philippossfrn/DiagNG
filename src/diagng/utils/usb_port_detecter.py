@@ -3,6 +3,7 @@ from collections import defaultdict
 from gi.repository import Gio
 
 from diagng.protocol.qualcomm.acquisition import usb_input
+from diagng.protocol.hisilicon.hisi_usb_detect import classify_diag_interface
 from diagng.gobject.usb_interface import USBInterface
 from diagng.gobject.mm_modem import ModemManagerModem
 from diagng.gobject.mm_port import ModemManagerPort
@@ -147,20 +148,20 @@ def detect_diag_usb_ports(
                                 intf_protocol,
                             )
 
-                            if text_interface not in (
-                                '255/255/48',
-                                '255/255/255',
-                            ):
-                                continue
-
                             for alt_setting in interface['alt_settings'] or []:
                                 alt_setting_num = alt_setting['b_alt_setting']
                                 num_endpoints = len(alt_setting['endpoints'])
 
-                                if num_endpoints != 2:
+                                # Accept Qualcomm or HiSilicon DIAG ports and
+                                # tag which connect path they belong to.
+                                baseband = classify_diag_interface(
+                                    vid_pid, text_interface, num_endpoints
+                                )
+                                if baseband is None:
                                     continue
 
                                 out_obj = USBInterface()
+                                out_obj.baseband = baseband
                                 out_obj.has_alt_settings = (
                                     len(interface['alt_settings']) > 1
                                 )

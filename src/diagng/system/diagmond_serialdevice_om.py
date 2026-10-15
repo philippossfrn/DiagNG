@@ -5,9 +5,12 @@ from typing import Optional
 
 from diagng.protocol.qualcomm.acquisition.spi_input import SerialQCDMInput
 from diagng.protocol.qualcomm.acquisition.usb_input import USBQCDMInput
+from diagng.protocol.hisilicon.acquisition.usb_input import USBHisiInput
+from diagng.protocol.hisilicon.hisi_usb_detect import BASEBAND_HISILICON
 from diagng.gobject.usb_interface import USBInterface
 from diagng.gobject.serial_port import SerialPort
 from diagng.ui.qcdm_window.imp import QCDMWindow
+from diagng.ui.hisi_window.imp import HisiWindow
 from diagng.gobject.usb_device import USBDevice
 
 import gi
@@ -158,9 +161,18 @@ class DiagmondSerialDeviceOM(GObject.Object):
             None,
         )
 
-        input_obj = USBQCDMInput(proxy, usb_dev, usb_intf, self.main_window)
+        if usb_intf.baseband == BASEBAND_HISILICON:
+            input_obj = USBHisiInput(
+                proxy, usb_dev, usb_intf, self.main_window
+            )
 
-        QCDMWindow(self.main_window, input_obj)
+            HisiWindow(self.main_window, input_obj)
+        else:
+            input_obj = USBQCDMInput(
+                proxy, usb_dev, usb_intf, self.main_window
+            )
+
+            QCDMWindow(self.main_window, input_obj)
 
     def on_object_added(self, om: Gio.DBusObjectManager, obj: Gio.DBusObject):
         debug('SerialDevice object added: %r' % obj)

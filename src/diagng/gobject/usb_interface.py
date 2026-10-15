@@ -28,6 +28,10 @@ class USBInterface(GObject.Object):
     has_alt_settings = GObject.Property(type=bool, default=False)
     full_intf_id = GObject.Property(type=str)
 
+    # Which baseband/connect path this DIAG interface belongs to:
+    # 'qualcomm' (default) or 'hisilicon'. Set by the USB scanner.
+    baseband = GObject.Property(type=str, default='qualcomm')
+
     connected = GObject.Property(type=bool, default=False)
 
     num_endpoints = GObject.Property(type=int)

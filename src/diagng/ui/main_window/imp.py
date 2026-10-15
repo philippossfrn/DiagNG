@@ -32,6 +32,15 @@ from diagng.gobject.serial_modem import SerialModem
 from diagng.gobject.mm_port import ModemManagerPort
 from diagng.gobject.serial_port import SerialPort
 from diagng.ui.qcdm_window.imp import QCDMWindow
+from diagng.ui.hisi_window.imp import HisiWindow
+from diagng.protocol.hisilicon.acquisition.pyusb_input import PyUSBHisiInput
+from diagng.protocol.hisilicon.acquisition import (
+    pyusb_input as hisi_pyusb_input,
+)
+from diagng.protocol.hisilicon.acquisition import (
+    usb_input as hisi_usb_input,
+)
+from diagng.protocol.hisilicon.hisi_usb_detect import BASEBAND_HISILICON
 from diagng.gobject.usb_device import USBDevice
 
 # Based on https://github.com/Taiko2k/GTK4PythonTutorial?tab=readme-ov-file#ui-from-graphical-designer
@@ -749,11 +758,11 @@ class MainWindow(Adw.ApplicationWindow):
 
         if self.usb_devices.get_n_items():
             self.usb_interfaces_group.set_title(
-                'Potential Qualcomm Diag USB devices'
+                'Potential Qualcomm / HiSilicon Diag USB devices'
             )
         else:
             self.usb_interfaces_group.set_title(
-                'Status: 🟠 No Qualcomm Diag USB devices detected'
+                'Status: 🟠 No Qualcomm / HiSilicon Diag USB devices detected'
             )
 
     def update_pyusb_data(self, *args):
@@ -880,7 +889,13 @@ class MainWindow(Adw.ApplicationWindow):
             usb_input._connected_ports[usb_intf.full_intf_id].close()
 
         if usb_intf.full_intf_id in pyusb_input._connected_ports:
-            usb_input._connected_ports[usb_intf.full_intf_id].close()
+            pyusb_input._connected_ports[usb_intf.full_intf_id].close()
+
+        if usb_intf.full_intf_id in hisi_pyusb_input._connected_ports:
+            hisi_pyusb_input._connected_ports[usb_intf.full_intf_id].close()
+
+        if usb_intf.full_intf_id in hisi_usb_input._connected_ports:
+            hisi_usb_input._connected_ports[usb_intf.full_intf_id].close()
 
     def connect_usb_intf(
         self, target: Gtk.Button, usb_dev: USBDevice, usb_intf: USBInterface
@@ -1011,11 +1026,18 @@ class MainWindow(Adw.ApplicationWindow):
                 dialog.choose(self, None, None)
 
             else:
-                input_obj = PyUSBQCDMInput(
-                    dev, in_ep, out_ep, usb_dev, usb_intf, self
-                )
+                if usb_intf.baseband == BASEBAND_HISILICON:
+                    input_obj = PyUSBHisiInput(
+                        dev, in_ep, out_ep, usb_dev, usb_intf, self
+                    )
 
-                QCDMWindow(self, input_obj)
+                    HisiWindow(self, input_obj)
+                else:
+                    input_obj = PyUSBQCDMInput(
+                        dev, in_ep, out_ep, usb_dev, usb_intf, self
+                    )
+
+                    QCDMWindow(self, input_obj)
 
     def disconnect_spi_port(self, target: Gtk.Button, serial_port: SerialPort):
         info('disconnect_spi_port called on %s' % serial_port.tty_device_path)
